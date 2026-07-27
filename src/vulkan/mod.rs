@@ -399,6 +399,11 @@ unsafe extern "C" fn vk_qp_khr_hook(queue: VkQueue, p_present_info: *const VkPre
 }
 
 unsafe fn render_frame(fb: VkFramebuffer, cmd_buf: VkCommandBuffer, fence: VkFence, dev: VkDevice, queue: VkQueue, rp: VkRenderPass, ext: VkExtent2D) {
+	if fb.is_null() || cmd_buf.is_null() || fence.is_null() || dev.is_null() || queue.is_null() || rp.is_null() {
+		error!("[Vulkan]: render_frame arg is nullptr!");
+		return;
+	}
+
 	let timeout_ns: u64 = 1_000_000_000;
 	if VK_API.wff()(dev, 1, &fence, 1, timeout_ns) == VK_TIMEOUT {
 		warn!("[Vulkan]: Fence wait timeout!");
