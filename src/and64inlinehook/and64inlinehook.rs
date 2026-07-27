@@ -494,8 +494,7 @@ unsafe fn fix_pcreladdr(
 		OP_ADRP => {
 			let current_idx = ctx.get_and_set_current_index(*inp, *outp);
 			let lsb_bytes = ((ins << 1) >> 30) as i32;
-			let absolute_addr = ((*inp as i64) & !0xfff) + ((((((ins << MSB) as i32) >> (MSB + LSB - 2)) & !3) | lsb_bytes) as i64) << 12;
-
+			let absolute_addr = ((*inp as i64) & !0xfff) + (((((((ins << MSB) as i32) >> (MSB + LSB - 2)) & !3) | lsb_bytes) as i64) << 12);
 			log_info!("ins = 0x{:08X}, pc = {:p}, abs_addr = {:p}", ins, *inp, absolute_addr as *const u8);
 
 			if ctx.is_in_fixing_range(absolute_addr) {
