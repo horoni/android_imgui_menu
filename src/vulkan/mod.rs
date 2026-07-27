@@ -129,6 +129,24 @@ pub fn get_state() -> RwLockReadGuard<'static, VkState> {
 	VK_STATE.read().unwrap()
 }
 
+macro_rules! hook_vk_export {
+	($lib:expr, $name:expr, $hook_fn:expr, $orig_store:expr) => {
+		let addr = $lib.sym($name, None).unwrap_or(ptr::null_mut());
+		if !addr.is_null() {
+			let mut orig: *mut c_void = ptr::null_mut();
+			unsafe {
+				let ret = utils::_vk_hook_stub2(addr, $hook_fn as *mut c_void, &mut orig);
+				trace!("HOOK: {} {:?} {:?} {}", $name, utils::_vk_find_api(addr), orig, ret);
+				if !orig.is_null() {
+					$orig_store.set(std::mem::transmute(orig)).ok();
+				}
+			}
+		} else {
+			trace!("HOOK: {} sym is null", $name);
+		}
+	};
+}
+
 pub fn init() {
 	let lib_vulkan = loop {
 		if let Some(hndl) = xdl::Xdl::open("libvulkan.so", 0) {
@@ -137,17 +155,16 @@ pub fn init() {
 		thread::sleep(Duration::from_millis(10));
 	};
 
-	let gipa_addr = lib_vulkan.sym("vkGetInstanceProcAddr", None).unwrap_or(ptr::null_mut());
-	let gipa_api_addr = unsafe { utils::_vk_find_api4(gipa_addr) };
-
-	trace!("HOOK: addr: {:?}", gipa_addr);
-	trace!("HOOK: api: {:?}", gipa_api_addr);
-
-	unsafe {
-		if let Some(tramp) = a64_hook_function(gipa_api_addr as *mut u32, vk_gipa_hook as *const u32) {
-			VK_ORIG.gipa.set(std::mem::transmute(tramp)).ok();
-		}
-	}
+	hook_vk_export!(lib_vulkan, "vkGetInstanceProcAddr", vk_gipa_hook, VK_ORIG.gipa);
+	hook_vk_export!(lib_vulkan, "vkGetDeviceProcAddr", vk_gdpa_hook, VK_ORIG.gdpa);
+	hook_vk_export!(lib_vulkan, "vkCreateInstance", vk_ci_hook, VK_ORIG.ci);
+	hook_vk_export!(lib_vulkan, "vkCreateDevice", vk_cd_hook, VK_ORIG.cd);
+	hook_vk_export!(lib_vulkan, "vkCreateFramebuffer", vk_cf_hook, VK_ORIG.cf);
+	hook_vk_export!(lib_vulkan, "vkDestroyFramebuffer", vk_df_hook, VK_ORIG.df);
+	hook_vk_export!(lib_vulkan, "vkGetDeviceQueue", vk_gdq_hook, VK_ORIG.gdq);
+	hook_vk_export!(lib_vulkan, "vkAcquireNextImageKHR", vk_ani_khr_hook, VK_ORIG.ani);
+	hook_vk_export!(lib_vulkan, "vkCreateSwapchainKHR", vk_cs_khr_hook, VK_ORIG.cs);
+	hook_vk_export!(lib_vulkan, "vkQueuePresentKHR", vk_qp_khr_hook, VK_ORIG.qp);
 }
 
 unsafe extern "C" fn vk_gipa_hook(instance: VkInstance, name: *const c_char) -> *mut c_void {
