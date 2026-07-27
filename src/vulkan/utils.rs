@@ -1,4 +1,5 @@
 #![allow(unsafe_op_in_unsafe_fn, dead_code)]
+use crate::and64inlinehook::flush_cache;
 use std::ffi::{c_void, c_int};
 use std::ptr;
 
@@ -14,7 +15,6 @@ unsafe extern "C" {
 	fn mmap(addr: *mut c_void, len: usize, prot: c_int, flags: c_int, fd: c_int, offset: i64) -> *mut c_void;
 	fn munmap(addr: *mut c_void, len: usize) -> c_int;
 	fn mprotect(addr: *mut c_void, len: usize, prot: c_int) -> c_int;
-	fn __clear_cache(begin: *mut c_void, end: *mut c_void);
 }
 
 static mut G_BRIDGE_POOL: *mut u8 = ptr::null_mut();
@@ -147,8 +147,8 @@ pub unsafe fn _vk_hook_stub(
 	*(target as *mut u32) = b_instruction;
 
 	mprotect(page_start, 4096, PROT_READ | PROT_EXEC);
-	__clear_cache(target as *mut c_void, (target + 4) as *mut c_void);
-	__clear_cache(bridge, (bridge as usize + 64) as *mut c_void);
+	flush_cache(target as *const u32, 4);
+	flush_cache(bridge as *const u32, 64);
 
 	0
 }

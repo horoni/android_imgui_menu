@@ -41,6 +41,7 @@ pub use and64inlinehook::{
 	a64_hook_function,
 	a64_hook_function_v,
 	init_hook_pool,
+	flush_cache,
 };
 
 // Re-export C FFI functions for compatibility
