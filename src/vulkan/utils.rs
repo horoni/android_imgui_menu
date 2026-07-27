@@ -1,5 +1,5 @@
 #![allow(unsafe_op_in_unsafe_fn, dead_code)]
-use crate::and64inlinehook::flush_cache;
+use crate::and64inlinehook::{flush_cache, a64_hook_function};
 use std::ffi::{c_void, c_int};
 use std::ptr;
 
@@ -163,20 +163,29 @@ pub unsafe fn _vk_hook_stub(
 	0
 }
 
-/// Must be called on 12 byte exported stub. it hooks it and their api
+/// Must be called on exported stub. it hooks it and their api
 pub unsafe fn _vk_hook_stub2(
 	address: *mut c_void,
 	replace_call: *mut c_void,
 	origin_call: *mut *mut c_void,
 ) -> i32 {
-	let api_addr = _vk_find_api12(address);
+	let api = _vk_find_api(address);
+	if api.0.is_null() {
+		return 1;
+	}
+	if api.1 <= 8 {
+		if let Some(tramp) = a64_hook_function(api.0.cast(), replace_call.cast()) {
+			if !origin_call.is_null() {
+				*origin_call = tramp.cast();
+			}
+		}
+	} else {
+		let ret = _vk_hook_stub(address, replace_call, origin_call);
+		if ret != 0 { return ret; }
 
-	let ret = _vk_hook_stub(address, replace_call, origin_call);
-	if ret != 0 { return ret; }
-
-	let ret = _vk_hook_stub(api_addr.0, replace_call, origin_call);
-	if ret != 0 { return ret; }
-
+		let ret = _vk_hook_stub(api.0, replace_call, origin_call);
+		if ret != 0 { return ret; }
+	}
 	0
 }
 
