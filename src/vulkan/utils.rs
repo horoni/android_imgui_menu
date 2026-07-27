@@ -132,7 +132,10 @@ pub unsafe fn _vk_hook_stub(
 	ptr::copy_nonoverlapping(address as *const u8, orig_code as *mut u8, copy_size);
 
 	mprotect(bridge_pg, 4096, PROT_READ | PROT_EXEC);
-	*origin_call = orig_code as *mut c_void;
+
+	if !origin_call.is_null() {
+		*origin_call = orig_code as *mut c_void;
+	}
 
 	if bti_c {
 		target += 4;
