@@ -237,3 +237,15 @@ pub unsafe fn _vk_find_api12(addr: *mut c_void) -> *mut c_void {
 
 	insn as *mut c_void
 }
+
+pub unsafe fn _vk_find_api(addr: *mut c_void) -> *mut c_void {
+	let api1 = _vk_find_api4(addr);
+	let api2 = _vk_find_api12(addr);
+	if !api1.is_null() {
+		return api1;
+	} else if !api2.is_null() {
+		return api2;
+	}
+	ptr::null_mut()
+}
+
