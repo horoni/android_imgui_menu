@@ -93,22 +93,13 @@ pub unsafe fn _vk_hook_stub(
 	replace_call: *mut c_void,
 	origin_call: *mut *mut c_void,
 ) -> i32 {
-	let mut insn = address as *mut u32;
+	let insn = address as *mut u32;
 	let mut bti_c = false;
 
 	// Check `BTI c`
 	if *insn == 0xD503245F {
 		bti_c = true;
-		insn = insn.add(1);
 	}
-
-	// Check `LDR [X??]`
-	if (*insn & 0x3FC00000) != 0x39400000 { return 1; }
-	insn = insn.add(1);
-	if (*insn & 0x3FC00000) != 0x39400000 { return 1; }
-	insn = insn.add(1);
-	// Check `BR`
-	if (*insn & 0xFFFFFC1F) != 0xD61F0000 { return 1; }
 
 	let mut target = address as usize;
 	let bridge = _alloc_near(target, 36);
