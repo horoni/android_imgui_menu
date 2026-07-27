@@ -202,6 +202,7 @@ pub unsafe fn _vk_find_api4(addr: *mut c_void) -> (*mut c_void, usize) {
 
 	let offset26 = *insn & 0x03FFFFFF;
 	let offset = ((offset26 << 6) as i32) >> 6;
+	insn = insn.add(1);
 
 	let offset = insn.offset(offset as isize) as *mut c_void;
 	(offset, insn as usize - addr as usize)
