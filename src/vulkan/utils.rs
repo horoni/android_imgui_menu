@@ -15,13 +15,17 @@ unsafe extern "C" {
 	fn mmap(addr: *mut c_void, len: usize, prot: c_int, flags: c_int, fd: c_int, offset: i64) -> *mut c_void;
 	fn munmap(addr: *mut c_void, len: usize) -> c_int;
 	fn mprotect(addr: *mut c_void, len: usize, prot: c_int) -> c_int;
+	fn sysconf(name: c_int) -> std::ffi::c_long;
 }
+
+const _SC_PAGE_SIZE: c_int = 0x0028;
 
 static mut G_BRIDGE_POOL: *mut u8 = ptr::null_mut();
 static mut G_BRIDGE_BYTES_USED: usize = 0;
 
 unsafe fn _alloc_page_near(target_addr: usize) -> *mut c_void {
-	let aligned_target = target_addr & !0xFFF_usize;
+	let page_size = sysconf(_SC_PAGE_SIZE) as usize;
+	let aligned_target = target_addr & !(page_size - 1);
 	const MAX_ARM64_BRANCH_RANGE: usize = 120 * 1024 * 1024;
 
 	let mut offset: usize = 0x1000000;
@@ -29,7 +33,7 @@ unsafe fn _alloc_page_near(target_addr: usize) -> *mut c_void {
 		let mut hint_addr = aligned_target.wrapping_add(offset);
 		let mut page = mmap(
 			hint_addr as *mut c_void,
-			4096,
+			page_size,
 			PROT_READ | PROT_WRITE,
 			MAP_PRIVATE | MAP_ANONYMOUS,
 			-1,
@@ -42,13 +46,13 @@ unsafe fn _alloc_page_near(target_addr: usize) -> *mut c_void {
 			if distance < MAX_ARM64_BRANCH_RANGE {
 				return page;
 			}
-			munmap(page, 4096);
+			munmap(page, page_size);
 		}
 
 		hint_addr = aligned_target.wrapping_sub(offset);
 		page = mmap(
 			hint_addr as *mut c_void,
-			4096,
+			page_size,
 			PROT_READ | PROT_WRITE,
 			MAP_PRIVATE | MAP_ANONYMOUS,
 			-1,
@@ -61,7 +65,7 @@ unsafe fn _alloc_page_near(target_addr: usize) -> *mut c_void {
 			if distance < MAX_ARM64_BRANCH_RANGE {
 				return page;
 			}
-			munmap(page, 4096);
+			munmap(page, page_size);
 		}
 
 		offset += 0x100000;
@@ -72,8 +76,9 @@ unsafe fn _alloc_page_near(target_addr: usize) -> *mut c_void {
 
 unsafe fn _alloc_near(target: usize, size: usize) -> *mut c_void {
 	let aligned_size = (size + 7) & !7_usize;
+	let page_size = sysconf(_SC_PAGE_SIZE) as usize;
 
-	if G_BRIDGE_POOL.is_null() || (G_BRIDGE_BYTES_USED + aligned_size > 4096) {
+	if G_BRIDGE_POOL.is_null() || (G_BRIDGE_BYTES_USED + aligned_size > page_size) {
 		G_BRIDGE_POOL = _alloc_page_near(target) as *mut u8;
 		G_BRIDGE_BYTES_USED = 0;
 	}
@@ -105,8 +110,9 @@ pub unsafe fn _vk_hook_stub(
 	let bridge = _alloc_near(target, 36);
 	if bridge.is_null() { return 2; }
 
-	let bridge_pg = (bridge as usize & !0xFFF_usize) as *mut c_void;
-	mprotect(bridge_pg, 4096, PROT_READ | PROT_WRITE | PROT_EXEC);
+	let page_size = sysconf(_SC_PAGE_SIZE) as usize;
+	let bridge_pg = (bridge as usize & !(page_size - 1)) as *mut c_void;
+	mprotect(bridge_pg, page_size, PROT_READ | PROT_WRITE | PROT_EXEC);
 
 	let mut bridge_code = bridge as *mut u32;
 	/*
@@ -131,7 +137,7 @@ pub unsafe fn _vk_hook_stub(
 	let orig_code = bridge_code;
 	ptr::copy_nonoverlapping(address as *const u8, orig_code as *mut u8, copy_size);
 
-	mprotect(bridge_pg, 4096, PROT_READ | PROT_EXEC);
+	mprotect(bridge_pg, page_size, PROT_READ | PROT_EXEC);
 
 	if !origin_call.is_null() {
 		*origin_call = orig_code as *mut c_void;
@@ -144,12 +150,13 @@ pub unsafe fn _vk_hook_stub(
 	let offset = (bridge as isize) - (target as isize);
 	let b_instruction = 0x14000000 | (((offset >> 2) & 0x03FFFFFF) as u32);
 
-	let page_start = (target & !0xFFF_usize) as *mut c_void;
-	mprotect(page_start, 4096, PROT_READ | PROT_WRITE | PROT_EXEC);
+	let page_start = (target & !(page_size - 1)) as *mut c_void;
+	mprotect(page_start, page_size, PROT_READ | PROT_WRITE | PROT_EXEC);
 
 	*(target as *mut u32) = b_instruction;
 
-	mprotect(page_start, 4096, PROT_READ | PROT_EXEC);
+	mprotect(page_start, page_size, PROT_READ | PROT_EXEC);
+
 	flush_cache(target as *const u32, 4);
 	flush_cache(bridge as *const u32, 64);
 
