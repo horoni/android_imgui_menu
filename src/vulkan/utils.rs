@@ -198,9 +198,10 @@ pub unsafe fn _vk_find_api4(addr: *mut c_void) -> *mut c_void {
 	}
 	if (*insn & 0xFC000000) != 0x14000000 { return ptr::null_mut(); }
 
-	let offset = (*insn & 0x03FFFFFF) as usize;
+	let offset26 = *insn & 0x03FFFFFF;
+	let offset = ((offset26 << 6) as i32) >> 6;
 
-	(insn as usize).wrapping_add(offset * 4) as *mut c_void
+	insn.offset(offset as isize) as *mut c_void
 }
 
 /// Must be called on 12 byte exported stubs in libvulkan.so
