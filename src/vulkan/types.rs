@@ -61,6 +61,7 @@ pub const VK_TIMEOUT: VkResult = 2;
 pub const VK_STRUCTURE_TYPE_SUBMIT_INFO: i32 = 4;
 pub const VK_STRUCTURE_TYPE_FENCE_CREATE_INFO: i32 = 8;
 pub const VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO: i32 = 33;
+pub const VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO: i32 = 38;
 pub const VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO: i32 = 39;
 pub const VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO: i32 = 40;
 pub const VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO: i32 = 42;
@@ -79,6 +80,23 @@ pub const VK_FENCE_CREATE_SIGNALED_BIT: u32 = 0x00000001;
 pub const VK_SUBPASS_CONTENTS_INLINE: i32 = 0;
 
 pub const VK_SAMPLE_COUNT_1_BIT: i32 = 0x00000001;
+
+pub const VK_ATTACHMENT_LOAD_OP_LOAD: i32 = 0;
+pub const VK_ATTACHMENT_LOAD_OP_CLEAR: i32 = 1;
+pub const VK_ATTACHMENT_LOAD_OP_DONT_CARE: i32 = 2;
+
+pub const VK_ATTACHMENT_STORE_OP_STORE: i32 = 0;
+pub const VK_ATTACHMENT_STORE_OP_DONT_CARE: i32 = 1;
+
+pub const VK_IMAGE_LAYOUT_UNDEFINED: i32 = 0;
+pub const VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL: i32 = 2;
+pub const VK_IMAGE_LAYOUT_PRESENT_SRC_KHR: i32 = 1000001002;
+
+pub const VK_PIPELINE_BIND_POINT_GRAPHICS: i32 = 0;
+pub const VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT: u32 = 0x00000400;
+pub const VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT: u32 = 0x00000100;
+pub const VK_ACCESS_COLOR_ATTACHMENT_READ_BIT: u32 = 0x00000080;
+pub const VK_SUBPASS_EXTERNAL: u32 = !0u32;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
@@ -128,7 +146,7 @@ pub struct VkFramebufferCreateInfo {
 }
 
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct VkSubmitInfo {
 	pub s_type: i32, // VK_STRUCTURE_TYPE_SUBMIT_INFO
 	pub p_next: *const c_void,
@@ -221,13 +239,75 @@ pub struct VkShaderModuleCreateInfo {
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct VkPipelineRenderingCreateInfo {
-	pub s_type: i32,
+	pub s_type: i32, // VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO
 	pub p_next: *const c_void,
 	pub view_mask: u32,
 	pub color_attachment_count: u32,
 	pub p_color_attachment_formats: *const VkFormat,
 	pub depth_attachment_format: VkFormat,
 	pub stencil_attachment_format: VkFormat,
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct VkAttachmentDescription {
+	pub flags: u32,
+	pub format: VkFormat,
+	pub samples: i32,
+	pub load_op: i32,
+	pub store_op: i32,
+	pub stencil_load_op: i32,
+	pub stencil_store_op: i32,
+	pub initial_layout: i32,
+	pub final_layout: i32,
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct VkAttachmentReference {
+	pub attachment: u32,
+	pub layout: i32,
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct VkSubpassDescription {
+	pub flags: u32,
+	pub pipeline_bind_point: i32,
+	pub input_attachment_count: u32,
+	pub p_input_attachments: *const VkAttachmentReference,
+	pub color_attachment_count: u32,
+	pub p_color_attachments: *const VkAttachmentReference,
+	pub p_resolve_attachments: *const VkAttachmentReference,
+	pub p_depth_stencil_attachment: *const VkAttachmentReference,
+	pub preserve_attachment_count: u32,
+	pub p_preserve_attachments: *const u32,
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct VkSubpassDependency {
+	pub src_subpass: u32,
+	pub dst_subpass: u32,
+	pub src_stage_mask: u32,
+	pub dst_stage_mask: u32,
+	pub src_access_mask: u32,
+	pub dst_access_mask: u32,
+	pub dependency_flags: u32,
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct VkRenderPassCreateInfo {
+	pub s_type: i32, // VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO
+	pub p_next: *const c_void,
+	pub flags: u32,
+	pub attachment_count: u32,
+	pub p_attachments: *const VkAttachmentDescription,
+	pub subpass_count: u32,
+	pub p_subpasses: *const VkSubpassDescription,
+	pub dependency_count: u32,
+	pub p_dependencies: *const VkSubpassDependency,
 }
 
 pub type PfnVkQueueSubmit = unsafe extern "C" fn(queue: VkQueue, submit_count: u32, p_submits: *const VkSubmitInfo, fence: VkFence) -> VkResult;
@@ -250,6 +330,7 @@ pub type PfnVkCmdEndRenderPass = unsafe extern "C" fn(command_buffer: VkCommandB
 pub type PfnVkCreateFence = unsafe extern "C" fn(device: VkDevice, p_create_info: *const VkFenceCreateInfo, allocator: GeneralPtr, p_fence: *mut VkFence) -> VkResult;
 pub type PfnVkWaitForFences = unsafe extern "C" fn(device: VkDevice, fence_count: u32, p_fences: *const VkFence, wait_all: VkBool32, timeout: u64) -> VkResult;
 pub type PfnVkResetFences = unsafe extern "C" fn(device: VkDevice, fence_count: u32, p_fences: *const VkFence) -> VkResult;
+pub type PfnVkCreateRenderPass = unsafe extern "C" fn(device: VkDevice, p_create_info: *const VkRenderPassCreateInfo, allocator: GeneralPtr, p_render_pass: *mut VkRenderPass) -> VkResult;
 
 // KHR
 pub type VkSwapchainCreateFlagsKHR = u32;

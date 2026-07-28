@@ -20,6 +20,7 @@ pub struct VkState {
 	pub queue_family: u32,
 	pub descriptor_pool: VkDescriptorPool,
 	pub command_pool: VkCommandPool,
+	pub format: VkFormat,
 	pub render_pass: VkRenderPass,
 	pub img_index: u32,
 	pub img_min: u32,
@@ -39,6 +40,7 @@ impl VkState {
 			queue_family: 0,
 			descriptor_pool: GeneralPtr::null(),
 			command_pool: GeneralPtr::null(),
+			format: 0,
 			render_pass: GeneralPtr::null(),
 			img_index: 0,
 			img_min: 0,
@@ -115,6 +117,7 @@ define_vk_fn_pool! {
 		cff: PfnVkCreateFence,
 		wff: PfnVkWaitForFences,
 		rff: PfnVkResetFences,
+		crp: PfnVkCreateRenderPass,
 	}
 }
 
@@ -246,6 +249,7 @@ unsafe extern "C" fn vk_cs_khr_hook(device: VkDevice, p_create_info: *const VkSw
 		let mut st = get_state_mut();
 		st.screen_extent = (*p_create_info).image_extent;
 		st.img_min = (*p_create_info).min_image_count;
+		st.format = (*p_create_info).image_format;
 		trace!("SYNC: {:?}", (*p_create_info).image_extent);
 		st.framebuffers.clear();
 
@@ -262,6 +266,7 @@ unsafe extern "C" fn vk_cs_khr_hook(device: VkDevice, p_create_info: *const VkSw
 		VK_API.cff.set(std::mem::transmute(gdpa(device, c"vkCreateFence".as_ptr()))).ok();
 		VK_API.wff.set(std::mem::transmute(gdpa(device, c"vkWaitForFences".as_ptr()))).ok();
 		VK_API.rff.set(std::mem::transmute(gdpa(device, c"vkResetFences".as_ptr()))).ok();
+		VK_API.crp.set(std::mem::transmute(gdpa(device, c"vkCreateRenderPass".as_ptr()))).ok();
 		trace!("FN Pool inited: {:?}", VK_API);
 		
 		// Init command and descriptor pool.
@@ -312,6 +317,64 @@ unsafe extern "C" fn vk_cs_khr_hook(device: VkDevice, p_create_info: *const VkSw
 			};
 			VK_API.cdp()(device, &pool_info, GeneralPtr::null(), &mut st.descriptor_pool);
 		}
+
+		if st.render_pass.is_null() {
+			// Create own render pass to render imgui.
+			// Fixes crash if load_op == LOAD_OP_CLEAR in captured render pass
+			let attachment = VkAttachmentDescription {
+				flags: 0,
+				format: st.format,
+				samples: VK_SAMPLE_COUNT_1_BIT,
+				load_op: VK_ATTACHMENT_LOAD_OP_LOAD,
+				store_op: VK_ATTACHMENT_STORE_OP_STORE,
+				stencil_load_op: VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+				stencil_store_op: VK_ATTACHMENT_STORE_OP_DONT_CARE,
+				initial_layout: VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+				final_layout: VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+			};
+
+			let color_attachment_ref = VkAttachmentReference {
+				attachment: 0,
+				layout: VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+			};
+
+			let subpass = VkSubpassDescription {
+				flags: 0,
+				pipeline_bind_point: VK_PIPELINE_BIND_POINT_GRAPHICS,
+				input_attachment_count: 0,
+				p_input_attachments: ptr::null(),
+				color_attachment_count: 1,
+				p_color_attachments: &color_attachment_ref,
+				p_resolve_attachments: ptr::null(),
+				p_depth_stencil_attachment: ptr::null(),
+				preserve_attachment_count: 0,
+				p_preserve_attachments: ptr::null(),
+			};
+
+			let dependency = VkSubpassDependency {
+				src_subpass: VK_SUBPASS_EXTERNAL,
+				dst_subpass: 0,
+				src_stage_mask: VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+				dst_stage_mask: VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+				src_access_mask: 0,
+				dst_access_mask: VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT,
+				dependency_flags: 0,
+			};
+
+			let rp_info = VkRenderPassCreateInfo {
+				s_type: VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+				p_next: ptr::null(),
+				flags: 0,
+				attachment_count: 1,
+				p_attachments: &attachment,
+				subpass_count: 1,
+				p_subpasses: &subpass,
+				dependency_count: 1,
+				p_dependencies: &dependency,
+			};
+
+			VK_API.crp()(st.dev, &rp_info, GeneralPtr::null(), &mut st.render_pass);
+		}
 	}
 	ret
 }
@@ -352,7 +415,6 @@ unsafe extern "C" fn vk_cf_hook(device: VkDevice, p_create_info: *const VkFrameb
 			} else {
 				st.framebuffers.push(*p_framebuffer);
 			}
-			st.render_pass = (*p_create_info).render_pass;
 		}
 	}
 	ret
@@ -462,10 +524,10 @@ unsafe fn render_frame(fb: VkFramebuffer, cmd_buf: VkCommandBuffer, fence: VkFen
 unsafe fn imgui_init() {
 	let st = get_state();
 	if !st.imgui_inited {
-		if st.instance.is_null() || st.render_pass.is_null() ||
-			st.phys_dev.is_null() || st.dev.is_null() ||
-			st.command_pool.is_null() || st.descriptor_pool.is_null() ||
-			st.queue.is_null() || st.framebuffers.len() < st.img_min as usize {
+		if st.instance.is_null() || st.phys_dev.is_null() ||
+			st.dev.is_null() || st.command_pool.is_null() ||
+			st.descriptor_pool.is_null() || st.queue.is_null() ||
+			st.framebuffers.len() < st.img_min as usize {
 			return;
 		}
 
