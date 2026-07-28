@@ -169,24 +169,24 @@ pub unsafe fn _vk_hook_stub2(
 	replace_call: *mut c_void,
 	origin_call: *mut *mut c_void,
 ) -> i32 {
-	let api = _vk_find_api(address);
-	if api.0.is_null() {
-		return 1;
-	}
-	if api.1 <= 8 {
-		if let Some(tramp) = a64_hook_function(api.0.cast(), replace_call.cast()) {
-			if !origin_call.is_null() {
-				*origin_call = tramp.cast();
+	if let Some(api) = _vk_find_api(address) {
+		if api.1 <= 8 {
+			if let Some(tramp) = a64_hook_function(api.0.cast(), replace_call.cast()) {
+				if !origin_call.is_null() {
+					*origin_call = tramp.cast();
+				}
 			}
-		}
-	} else {
-		let ret = _vk_hook_stub(address, replace_call, origin_call);
-		if ret != 0 { return ret; }
+		} else {
+			let ret = _vk_hook_stub(address, replace_call, origin_call);
+			if ret != 0 { return ret; }
 
-		let ret = _vk_hook_stub(api.0, replace_call, origin_call);
-		if ret != 0 { return ret; }
+			let ret = _vk_hook_stub(api.0, replace_call, origin_call);
+			if ret != 0 { return ret; }
+		}
+		0
+	} else {
+		1
 	}
-	0
 }
 
 /// Must be called on 4 byte exported stubs in libvulkan.so
@@ -199,22 +199,22 @@ pub unsafe fn _vk_hook_stub2(
 /// BTI c
 /// B xxx
 /// ```
-pub unsafe fn _vk_find_api4(addr: *mut c_void) -> (*mut c_void, usize) {
-	if addr.is_null() { return (ptr::null_mut(), 0);}
+pub unsafe fn _vk_find_api4(addr: *mut c_void) -> Option<(*mut c_void, usize)> {
+	if addr.is_null() { return None;}
 
 	let mut insn = addr as *mut u32;
 
 	if *insn == 0xD503245F {
 		insn = insn.add(1);
 	}
-	if (*insn & 0xFC000000) != 0x14000000 { return (ptr::null_mut(), 0); }
+	if (*insn & 0xFC000000) != 0x14000000 { return None; }
 
 	let offset26 = *insn & 0x03FFFFFF;
 	let offset = ((offset26 << 6) as i32) >> 6;
 	let offset = insn.offset(offset as isize) as *mut c_void;
 
 	insn = insn.add(1);
-	(offset, insn as usize - addr as usize)
+	Some((offset, insn as usize - addr as usize))
 }
 
 /// Must be called on 12 byte exported stubs in libvulkan.so
@@ -232,8 +232,8 @@ pub unsafe fn _vk_find_api4(addr: *mut c_void) -> (*mut c_void, usize) {
 /// LDR x?? [x??, #??]
 /// BR  x??
 /// ```
-pub unsafe fn _vk_find_api12(addr: *mut c_void) -> (*mut c_void, usize) {
-	if addr.is_null() { return (ptr::null_mut(), 0); }
+pub unsafe fn _vk_find_api12(addr: *mut c_void) -> Option<(*mut c_void, usize)> {
+	if addr.is_null() { return None; }
 
 	let mut insn = addr as *mut u32;
 
@@ -241,22 +241,17 @@ pub unsafe fn _vk_find_api12(addr: *mut c_void) -> (*mut c_void, usize) {
 		insn = insn.add(1);
 	}
 
-	if (*insn & 0x3FC00000) != 0x39400000 { return (ptr::null_mut(), 0); }
+	if (*insn & 0x3FC00000) != 0x39400000 { return None; }
 	insn = insn.add(1);
-	if (*insn & 0x3FC00000) != 0x39400000 { return (ptr::null_mut(), 0); }
+	if (*insn & 0x3FC00000) != 0x39400000 { return None; }
 	insn = insn.add(1);
-	if (*insn & 0xFFFFFC1F) != 0xD61F0000 { return (ptr::null_mut(), 0); }
+	if (*insn & 0xFFFFFC1F) != 0xD61F0000 { return None; }
 	insn = insn.add(1);
 
-	(insn as *mut c_void, insn as usize - addr as usize)
+	Some((insn as *mut c_void, insn as usize - addr as usize))
 }
 
 /// Returns ptr to api and size of given stub
-pub unsafe fn _vk_find_api(addr: *mut c_void) -> (*mut c_void, usize) {
-	let api = _vk_find_api4(addr);
-	if !api.0.is_null() {
-		return api;
-	}
-	_vk_find_api12(addr)
+pub unsafe fn _vk_find_api(addr: *mut c_void) -> Option<(*mut c_void, usize)> {
+	_vk_find_api4(addr).or_else(|| _vk_find_api12(addr))
 }
-
