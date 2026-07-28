@@ -4,9 +4,8 @@ mod utils;
 pub mod types;
 
 use std::ffi::{CStr, c_char, c_void};
-use std::{ptr, thread};
+use std::ptr;
 use std::sync::{OnceLock, RwLock, RwLockWriteGuard, RwLockReadGuard};
-use std::time::Duration;
 use crate::{imgui, xdl};
 use crate::vulkan::types::*;
 use crate::and64inlinehook::a64_hook_function;
@@ -150,11 +149,9 @@ macro_rules! hook_vk_export {
 }
 
 pub fn init() {
-	let lib_vulkan = loop {
-		if let Some(hndl) = xdl::Xdl::open("libvulkan.so", 0) {
-			break hndl;
-		}
-		thread::sleep(Duration::from_millis(10));
+	let Some(lib_vulkan) = xdl::Xdl::open_poll("libvulkan.so", 0, 300) else {
+		warn!("[Vulkan]: libvulkan.so not found after 3 sec");
+		return;
 	};
 
 	hook_vk_export!(lib_vulkan, "vkGetInstanceProcAddr", vk_gipa_hook, VK_ORIG.gipa);

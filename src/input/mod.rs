@@ -2,8 +2,7 @@
 
 use std::ffi::{c_long, c_void};
 use std::sync::OnceLock;
-use std::time::Duration;
-use std::{ptr, thread};
+use std::ptr;
 
 use crate::and64inlinehook::a64_hook_function;
 use crate::xdl;
@@ -39,11 +38,9 @@ unsafe extern "C" fn input2_hook(consumer: *mut c_void, factory: *mut c_void, is
 }
 
 pub fn init() {
-	let lib_input = loop {
-		if let Some(hndl) = xdl::Xdl::open("libinput.so", 0) {
-			break hndl;
-		}
-		thread::sleep(Duration::from_millis(10));
+	let Some(lib_input) = xdl::Xdl::open_poll("libinput.so", 0, 300) else {
+		warn!("[Input]: libinput.so not found after 3 sec");
+		return;
 	};
 
 	let input1_addr = lib_input.sym("_ZN7android13InputConsumer21initializeMotionEventEPNS_11MotionEventEPKNS_12InputMessageE", None).unwrap_or(ptr::null_mut());

@@ -9,8 +9,6 @@ use crate::xdl;
 use std::sync::OnceLock;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
-use std::time::Duration;
-use std::thread;
 use std::ptr;
 
 static ORIG_SWAPBUFFERS: OnceLock<PfnEglSwapBuffers> = OnceLock::new();
@@ -22,17 +20,13 @@ static GL_DISABLE: OnceLock<PfnGlDisable> = OnceLock::new();
 static IMGUI_INITED: AtomicBool = AtomicBool::new(false);
 
 pub fn init() {
-	let lib_egl = loop {
-		if let Some(hndl) = xdl::Xdl::open("libEGL.so", 0) {
-			break hndl;
-		}
-		thread::sleep(Duration::from_millis(10));
+	let Some(lib_egl) = xdl::Xdl::open_poll("libEGL.so", 0, 300) else {
+		warn!("[EGL]: libEGL.so not found after 3 sec");
+		return;
 	};
-	let lib_gles = loop {
-		if let Some(hndl) = xdl::Xdl::open("libGLESv3.so", 0) {
-			break hndl;
-		}
-		thread::sleep(Duration::from_millis(10));
+	let Some(lib_gles) = xdl::Xdl::open_poll("libGLESv3.so", 0, 300) else {
+		warn!("[EGL]: libGLESv3.so not found after 3 sec");
+		return;
 	};
 
 	let swapbuffers_addr = lib_egl.sym("eglSwapBuffers", None).unwrap_or(ptr::null_mut());

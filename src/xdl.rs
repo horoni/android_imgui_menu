@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 use std::{ffi::{CString, c_char, c_int, c_void}, ptr};
+use std::thread;
+use std::time::Duration;
 
 unsafe extern "C" {
 	fn xdl_open(filename: *const c_char, flags: c_int) -> *const c_void;
@@ -25,6 +27,16 @@ impl Xdl {
 		let handle = unsafe { xdl_open(c_filename.as_ptr(), flags as c_int) };
 
 		if handle.is_null() { None } else { Some(Self { handle }) }
+	}
+
+	pub fn open_poll(filename: &str, flags: u32, max_attempts: u32) -> Option<Self> {
+		for _ in 0..max_attempts {
+			if let Some(hndl) = Self::open(filename, flags) {
+				return Some(hndl);
+			}
+			thread::sleep(Duration::from_millis(10));
+		}
+		None
 	}
 
 	/// Search in .symtab
