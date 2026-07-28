@@ -95,7 +95,6 @@ define_vk_fn_pool! {
 		gdpa: PfnVkGetDeviceProcAddr,
 		cd:   PfnVkCreateDevice,
 		ci:   PfnVkCreateInstance,
-		ani:  PfnVkAcquireNextImageKHR,
 		cs:   PfnVkCreateSwapchainKHR,
 		cf:   PfnVkCreateFramebuffer,
 		df:   PfnVkDestroyFramebuffer,
@@ -165,7 +164,6 @@ pub fn init() {
 	hook_vk_export!(lib_vulkan, "vkCreateFramebuffer", vk_cf_hook, VK_ORIG.cf);
 	hook_vk_export!(lib_vulkan, "vkDestroyFramebuffer", vk_df_hook, VK_ORIG.df);
 	hook_vk_export!(lib_vulkan, "vkGetDeviceQueue", vk_gdq_hook, VK_ORIG.gdq);
-	hook_vk_export!(lib_vulkan, "vkAcquireNextImageKHR", vk_ani_khr_hook, VK_ORIG.ani);
 	hook_vk_export!(lib_vulkan, "vkCreateSwapchainKHR", vk_cs_khr_hook, VK_ORIG.cs);
 	hook_vk_export!(lib_vulkan, "vkQueuePresentKHR", vk_qp_khr_hook, VK_ORIG.qp);
 }
@@ -183,11 +181,6 @@ unsafe extern "C" fn vk_gipa_hook(instance: VkInstance, name: *const c_char) -> 
 			trace!("GTINS: vkCreateInstance");
 			VK_ORIG.ci.set(std::mem::transmute(addr)).ok();
 			vk_ci_hook as *mut c_void
-		}
-		b"vkAcquireNextImageKHR" => {
-			trace!("GTINS: vkAcquireNextImageKHR");
-			VK_ORIG.ani.set(std::mem::transmute(addr)).ok();
-			vk_ani_khr_hook as *mut c_void
 		}
 		b"vkCreateSwapchainKHR" => {
 			trace!("GTINS: vkCreateSwapchainKHR");
@@ -229,17 +222,6 @@ unsafe extern "C" fn vk_gdpa_hook(device: VkDevice, name: *const c_char) -> *mut
 		}
 		_ => {addr}
 	}
-}
-
-unsafe extern "C" fn vk_ani_khr_hook(device: VkDevice, swapchain: VkSwapchainKHR, timeout: u64, semaphore: VkSemaphore, fence: VkFence, image_index: *mut u32) -> VkResult {
-	trace!("[CALLED]: AcquireNextImageKHR");
-	let ret = VK_ORIG.ani()(device, swapchain, timeout, semaphore, fence, image_index);
-	if ret == VK_SUCCESS {
-		let mut st = get_state_mut();
-		st.img_index = *image_index;
-		trace!("SYNC: Acquire Index {}", *image_index);
-	}
-	ret
 }
 
 unsafe extern "C" fn vk_cs_khr_hook(device: VkDevice, p_create_info: *const VkSwapchainCreateInfoKHR, allocator: GeneralPtr, p_swapchain: *mut VkSwapchainKHR) -> VkResult {
@@ -442,13 +424,25 @@ unsafe extern "C" fn vk_qp_khr_hook(queue: VkQueue, p_present_info: *const VkPre
 	trace!("[CALLED]: QueuePresentKHR");
 	imgui_init();
 
+	let info = &*p_present_info;
+	let image_index = if info.swapchain_count > 0 && !info.p_image_indices.is_null() {
+		*info.p_image_indices as usize
+	} else {
+		warn!("[Vulkan]: Cannot find image index");
+		0
+	};
+
+	{
+		get_state_mut().img_index = image_index as u32;
+	}
+
 	let (fb, cmd_buf, fence, dev, queue, rp, ext) = {
 		let st = get_state();
-		if !st.imgui_inited || (st.img_index as usize) >= st.framebuffers.len() {
+		if !st.imgui_inited || (image_index) >= st.framebuffers.len() {
 			return VK_ORIG.qp()(queue, p_present_info);
 		}
-		let idx = (st.img_index as usize) % 8;
-		let fb = st.framebuffers[st.img_index as usize];
+		let idx = (image_index) % 8;
+		let fb = st.framebuffers[image_index];
 		if fb.is_null() {
 			return VK_ORIG.qp()(queue, p_present_info);
 		}
