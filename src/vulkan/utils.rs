@@ -253,13 +253,10 @@ pub unsafe fn _vk_find_api12(addr: *mut c_void) -> (*mut c_void, usize) {
 
 /// Returns ptr to api and size of given stub
 pub unsafe fn _vk_find_api(addr: *mut c_void) -> (*mut c_void, usize) {
-	let api1 = _vk_find_api4(addr);
-	let api2 = _vk_find_api12(addr);
-	if !api1.0.is_null() {
-		return api1;
-	} else if !api2.0.is_null() {
-		return api2;
+	let api = _vk_find_api4(addr);
+	if !api.0.is_null() {
+		return api;
 	}
-	(ptr::null_mut(), 0)
+	_vk_find_api12(addr)
 }
 
