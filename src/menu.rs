@@ -1,19 +1,62 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
+use crate::text;
 use crate::vulkan;
 use crate::imgui;
-use std::ffi::{c_int, c_double};
-use std::ptr;
+use crate::ui;
+use crate::fmt_c;
+use std::cell::RefCell;
 
-pub unsafe fn render_menu(is_vulkan: bool) {
-	imgui::igBegin(c"Menu".as_ptr(), ptr::null_mut(), 0);
-	imgui::igText(c"Hello from ImGui!".as_ptr());
-	imgui::igText(c"Vulkan?: %d".as_ptr(), is_vulkan as c_int);
-	if is_vulkan {
-		let st = vulkan::get_state();
-		imgui::igText(c"image index: %d".as_ptr(), st.img_index);
-		imgui::igText(c"framebuffers: %d".as_ptr(), st.framebuffers.len());
+pub fn render_menu(is_vulkan: bool) {
+	static mut A: bool = false;
+	thread_local! {
+		static VULKAN_FB_TABLE: RefCell<bool> = RefCell::new(false);
+		static COUNTER: RefCell<u32> = RefCell::new(0);
 	}
-	imgui::igText(c"delta: %f".as_ptr(), (*imgui::igGetIO_Nil()).delta_time as c_double);
-	imgui::igEnd();
+
+	let ui = ui::Ui::new();
+	ui.window(c"Menu")
+		.size(300.0, 400.0, imgui::ImGuiCond_Once)
+		.build(|| {
+		ui.text(c"Hello from ImGui");
+		ui.checkbox(c"Some checkbox", &raw mut A);
+		ui.text(fmt_c!("Vulkan?: {}", is_vulkan));
+		if is_vulkan {
+			let st = vulkan::get_state();
+			ui.text(fmt_c!("image index: {}", st.img_index));
+			ui.text(fmt_c!("framebuffers: {}", st.framebuffers.len()));
+			VULKAN_FB_TABLE.with_borrow_mut(|v| {
+				ui.checkbox(c"FB table", v);
+				if *v {
+					ui.table(c"framebuffers_table", 2)
+						.sizing_fixed_fit()
+						.build(|t| {
+						t.setup_column(c"idx");
+						t.setup_column(c"ptr");
+						t.headers_row();
+
+						let mut idx = 0usize;
+						for fb in &st.framebuffers {
+							t.next_row();
+							t.cell(|| ui.text(fmt_c!("{}", idx)));
+							t.cell(|| ui.text(fmt_c!("{:?}", fb)));
+							idx += 1;
+						}
+					});
+				}
+			});
+		}
+		COUNTER.with(|v| {
+			let mut a = v.borrow_mut();
+			ui.text(fmt_c!("Counter: {}", a));
+			if ui.button("Click") {
+				*a += 1;
+			}
+		});
+		let delta = unsafe {
+			(*imgui::igGetIO_Nil()).delta_time
+		};
+		text!(ui, "delta: {}", delta);
+		text!(ui, "fps: {}", 1.0 / delta);
+	});
 }

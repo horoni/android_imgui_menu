@@ -2,6 +2,7 @@ mod logger;
 mod and64inlinehook;
 mod xdl;
 mod imgui;
+mod ui;
 mod vulkan;
 mod egl;
 mod menu;

@@ -1,13 +1,16 @@
-#![allow(unsafe_op_in_unsafe_fn)]
+#![allow(unsafe_op_in_unsafe_fn, unused, non_upper_case_globals)]
 
-use std::{ffi::{c_char, c_int, c_void}, ptr};
+use std::{ffi::{c_char, c_float, c_int, c_void}, ptr};
 use crate::vulkan::types::*;
 use std::time::Instant;
 
 pub type PfnImGuiVulkanLoader = unsafe extern "C" fn(function_name: *const c_char, user_data: *mut c_void) -> *mut c_void;
 
 #[repr(C)]
-pub struct ImGuiContext;
+pub struct ImGuiContext {
+	// Get rid of warning about ffi safety
+	_priv: [u8; 4],
+}
 
 #[repr(C)]
 pub struct ImGuiStyle {
@@ -30,6 +33,32 @@ pub struct ImGuiIO {
 	// ... Not a full struct
 }
 
+pub const ImGuiCond_None: i32 = 0;
+pub const ImGuiCond_Always: i32 = 1 << 0;
+pub const ImGuiCond_Once: i32 = 1 << 1;
+pub const ImGuiCond_FirstUseEver: i32 = 1 << 2;
+pub const ImGuiCond_Appearing: i32 = 1 << 3;
+
+pub const ImGuiTableFlags_None: i32 = 0;
+pub const ImGuiTableFlags_Resizable: i32 = 1 << 0;
+pub const ImGuiTableFlags_Reorderable: i32 = 1 << 1;
+pub const ImGuiTableFlags_Hideable: i32 = 1 << 2;
+pub const ImGuiTableFlags_Sortable: i32 = 1 << 3;
+pub const ImGuiTableFlags_RowBg: i32 = 1 << 6;
+pub const ImGuiTableFlags_BordersInnerH: i32 = 1 << 7;
+pub const ImGuiTableFlags_BordersOuterH: i32 = 1 << 8;
+pub const ImGuiTableFlags_BordersInnerV: i32 = 1 << 9;
+pub const ImGuiTableFlags_BordersOuterV: i32 = 1 << 10;
+pub const ImGuiTableFlags_BordersH: i32 = ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_BordersOuterH;
+pub const ImGuiTableFlags_BordersV: i32 = ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersOuterV;
+pub const ImGuiTableFlags_Borders: i32 = ImGuiTableFlags_BordersH | ImGuiTableFlags_BordersV;
+pub const ImGuiTableFlags_SizingFixedFit: i32 = 1 << 13;
+pub const ImGuiTableFlags_SizingFixedSame: i32 = 2 << 13;
+pub const ImGuiTableFlags_SizingStretchProp: i32 = 3 << 13;
+pub const ImGuiTableFlags_SizingStretchSame: i32 = 4 << 13;
+pub const ImGuiTableFlags_ScrollX: i32 = 1 << 24;
+pub const ImGuiTableFlags_ScrollY: i32 = 1 << 25;
+
 unsafe extern "C" {
 	pub fn igCreateContext(shared_font_atlas: *mut c_void) -> *mut ImGuiContext;
 	pub fn igGetCurrentContext() -> *mut ImGuiContext;
@@ -41,8 +70,17 @@ unsafe extern "C" {
 	pub fn ImGuiStyle_ScaleAllSizes(self_: *mut ImGuiStyle, scale_factor: f32);
 
 	pub fn igBegin(name: *const c_char, p_open: *mut bool, flags: i32) -> bool;
-	pub fn igText(fmt: *const c_char, ...);
 	pub fn igEnd();
+	pub fn igSetNextWindowSize(size: ImVec2, cond: i32);
+	pub fn igText(fmt: *const c_char, ...);
+	pub fn igCheckbox(label: *const c_char, v: *mut bool) -> bool;
+	pub fn igButton(label: *const c_char, size: ImVec2) -> bool;
+	pub fn igBeginTable(str_id: *const c_char, columns: c_int, flags: i32, outer_size: ImVec2, inner_width: c_float) -> bool;
+	pub fn igEndTable();
+	pub fn igTableNextRow(row_flags: i32, min_row_height: c_float);
+	pub fn igTableNextColumn() -> bool;
+	pub fn igTableSetupColumn(label: *const c_char, flags: i32, init_width_or_weight: c_float, user_id: i32);
+	pub fn igTableHeadersRow();
 
 	pub fn ImGui_ImplVulkan_LoadFunctions(api_version: u32, loader_func: PfnImGuiVulkanLoader, user_data: *mut c_void) -> bool;
 	pub fn ImGui_ImplVulkan_Init(init_info: *mut ImGui_ImplVulkan_InitInfo) -> bool;
