@@ -12,6 +12,9 @@ mod input;
 use log::LevelFilter;
 use crate::and64inlinehook::init_hook_pool;
 
+#[cfg(not(all(target_arch = "aarch64", target_os = "android")))]
+compile_error!("Only aarch64-android is supported");
+
 fn lib_main() {
 	crate::logger::init_with_level("android_imgui_menu", LevelFilter::Trace).unwrap();
 	setup_panic_hook();
