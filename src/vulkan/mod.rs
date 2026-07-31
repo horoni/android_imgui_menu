@@ -7,7 +7,6 @@ use std::ptr;
 use std::sync::{OnceLock, RwLock, RwLockWriteGuard, RwLockReadGuard};
 use vulkan_rs::*;
 use imgui_rs::ffi as imgui;
-use crate::and64inlinehook::a64_hook_function;
 
 #[derive(Debug)]
 pub struct VkState {

@@ -11,6 +11,7 @@ crate-type = ["cdylib"]
 xdl-rs = { path = "xdl-rs" }
 imgui-rs = { path = "imgui-rs" }
 vulkan-rs = { path = "vulkan-rs" }
+and64inlinehook-rs = { path = "and64inlinehook-rs" }
 #jni-simple = "0.3"
 
 [dependencies.log]

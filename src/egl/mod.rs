@@ -2,8 +2,8 @@
 
 mod types;
 
-use crate::and64inlinehook::a64_hook_function;
 use crate::egl::types::*;
+use and64inlinehook_rs::a64_hook_function;
 use imgui_rs::ffi as imgui;
 use std::sync::OnceLock;
 use std::sync::atomic::AtomicBool;

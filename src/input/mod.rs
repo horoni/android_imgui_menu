@@ -4,7 +4,7 @@ use std::ffi::{c_long, c_void};
 use std::sync::OnceLock;
 use std::ptr;
 
-use crate::and64inlinehook::a64_hook_function;
+use and64inlinehook_rs::a64_hook_function;
 use imgui_rs::ffi as imgui;
 
 type PfnInput1 = unsafe extern "C" fn(thiz: *mut c_void, ex_ab: *const c_void, ex_ac: *const c_void);

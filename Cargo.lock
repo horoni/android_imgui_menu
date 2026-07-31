@@ -3,9 +3,17 @@
 version = 4
 
 [[package]]
+name = "and64inlinehook-rs"
+version = "0.1.0"
+dependencies = [
+ "log",
+]
+
+[[package]]
 name = "android_imgui_menu"
 version = "0.1.0"
 dependencies = [
+ "and64inlinehook-rs",
  "cc",
  "imgui-rs",
  "log",

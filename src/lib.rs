@@ -1,5 +1,4 @@
 mod logger;
-mod and64inlinehook;
 mod vulkan;
 mod egl;
 mod menu;
@@ -8,7 +7,7 @@ mod input;
 #[macro_use] extern crate log;
 
 use log::LevelFilter;
-use crate::and64inlinehook::init_hook_pool;
+use and64inlinehook_rs::init_hook_pool;
 
 #[cfg(not(all(target_arch = "aarch64", target_os = "android")))]
 compile_error!("Only aarch64-android is supported");

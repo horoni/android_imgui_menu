@@ -1,5 +1,5 @@
 #![allow(unsafe_op_in_unsafe_fn, dead_code)]
-use crate::and64inlinehook::{flush_cache, a64_hook_function};
+use and64inlinehook_rs::{flush_cache, a64_hook_function};
 use std::ffi::{c_void, c_int};
 use std::ptr;
 
