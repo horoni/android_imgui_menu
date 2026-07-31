@@ -8,6 +8,7 @@ version = "0.1.0"
 dependencies = [
  "cc",
  "log",
+ "xdl-rs",
 ]
 
 [[package]]
@@ -37,3 +38,10 @@ name = "shlex"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
+
+[[package]]
+name = "xdl-rs"
+version = "0.1.0"
+dependencies = [
+ "cc",
+]

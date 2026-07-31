@@ -5,7 +5,6 @@ use std::sync::OnceLock;
 use std::ptr;
 
 use crate::and64inlinehook::a64_hook_function;
-use crate::xdl;
 use crate::imgui;
 
 type PfnInput1 = unsafe extern "C" fn(thiz: *mut c_void, ex_ab: *const c_void, ex_ac: *const c_void);
@@ -38,7 +37,7 @@ unsafe extern "C" fn input2_hook(consumer: *mut c_void, factory: *mut c_void, is
 }
 
 pub fn init() {
-	let Some(lib_input) = xdl::Xdl::open_poll("libinput.so", 0, 300) else {
+	let Some(lib_input) = xdl_rs::Xdl::open_poll("libinput.so", 0, 300) else {
 		warn!("[Input]: libinput.so not found after 3 sec");
 		return;
 	};

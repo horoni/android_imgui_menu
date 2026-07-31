@@ -6,7 +6,7 @@ pub mod types;
 use std::ffi::{CStr, c_char, c_void};
 use std::ptr;
 use std::sync::{OnceLock, RwLock, RwLockWriteGuard, RwLockReadGuard};
-use crate::{imgui, xdl};
+use crate::imgui;
 use crate::vulkan::types::*;
 use crate::and64inlinehook::a64_hook_function;
 
@@ -149,7 +149,7 @@ macro_rules! hook_vk_export {
 }
 
 pub fn init() {
-	let Some(lib_vulkan) = xdl::Xdl::open_poll("libvulkan.so", 0, 300) else {
+	let Some(lib_vulkan) = xdl_rs::Xdl::open_poll("libvulkan.so", 0, 300) else {
 		warn!("[Vulkan]: libvulkan.so not found after 3 sec");
 		return;
 	};

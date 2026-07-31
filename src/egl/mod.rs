@@ -5,7 +5,6 @@ mod types;
 use crate::and64inlinehook::a64_hook_function;
 use crate::egl::types::*;
 use crate::imgui;
-use crate::xdl;
 use std::sync::OnceLock;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
@@ -20,11 +19,11 @@ static GL_DISABLE: OnceLock<PfnGlDisable> = OnceLock::new();
 static IMGUI_INITED: AtomicBool = AtomicBool::new(false);
 
 pub fn init() {
-	let Some(lib_egl) = xdl::Xdl::open_poll("libEGL.so", 0, 300) else {
+	let Some(lib_egl) = xdl_rs::Xdl::open_poll("libEGL.so", 0, 300) else {
 		warn!("[EGL]: libEGL.so not found after 3 sec");
 		return;
 	};
-	let Some(lib_gles) = xdl::Xdl::open_poll("libGLESv3.so", 0, 300) else {
+	let Some(lib_gles) = xdl_rs::Xdl::open_poll("libGLESv3.so", 0, 300) else {
 		warn!("[EGL]: libGLESv3.so not found after 3 sec");
 		return;
 	};

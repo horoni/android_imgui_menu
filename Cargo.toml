@@ -8,6 +8,7 @@ license = "BSD-2-Clause"
 crate-type = ["cdylib"]
 
 [dependencies]
+xdl-rs = { path = "xdl-rs" }
 #jni-simple = "0.3"
 
 [dependencies.log]
