@@ -1,13 +1,12 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
 mod utils;
-pub mod types;
 
 use std::ffi::{CStr, c_char, c_void};
 use std::ptr;
 use std::sync::{OnceLock, RwLock, RwLockWriteGuard, RwLockReadGuard};
-use crate::imgui;
-use crate::vulkan::types::*;
+use vulkan_rs::*;
+use imgui_rs::ffi as imgui;
 use crate::and64inlinehook::a64_hook_function;
 
 #[derive(Debug)]

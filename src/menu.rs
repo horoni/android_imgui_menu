@@ -1,10 +1,8 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
-use crate::text;
 use crate::vulkan;
-use crate::imgui;
-use crate::ui;
-use crate::fmt_c;
+use imgui_rs::ffi as imgui;
+use imgui_rs::{ui, text, fmt_c};
 use std::cell::RefCell;
 
 pub fn render_menu(is_vulkan: bool) {

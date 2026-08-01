@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use crate::imgui::*;
+use crate::ffi::*;
 use super::cstr::IntoCStr;
 
 pub struct TableToken;

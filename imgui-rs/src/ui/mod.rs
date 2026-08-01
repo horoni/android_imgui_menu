@@ -5,7 +5,7 @@ pub mod table;
 
 use cstr::IntoCStr;
 use table::TableToken;
-use crate::imgui::*;
+use crate::ffi::*;
 
 pub struct WindowBuilder {
 	title: *const std::ffi::c_char,

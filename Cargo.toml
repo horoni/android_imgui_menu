@@ -9,6 +9,8 @@ crate-type = ["cdylib"]
 
 [dependencies]
 xdl-rs = { path = "xdl-rs" }
+imgui-rs = { path = "imgui-rs" }
+vulkan-rs = { path = "vulkan-rs" }
 #jni-simple = "0.3"
 
 [dependencies.log]

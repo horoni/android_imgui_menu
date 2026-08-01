@@ -1,8 +1,8 @@
 #![allow(unsafe_op_in_unsafe_fn, unused, non_upper_case_globals)]
 
 use std::{ffi::{c_char, c_float, c_int, c_void}, ptr};
-use crate::vulkan::types::*;
 use std::time::Instant;
+use vulkan_rs::*;
 
 pub type PfnImGuiVulkanLoader = unsafe extern "C" fn(function_name: *const c_char, user_data: *mut c_void) -> *mut c_void;
 
