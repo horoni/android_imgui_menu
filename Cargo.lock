@@ -5,6 +5,7 @@ version = 4
 [[package]]
 name = "and64inlinehook-rs"
 version = "0.1.0"
+source = "git+https://github.com/horoni/and64inlinehook-rs#bc847cd49dec20863f5586ba9a0c12b61ffef613"
 dependencies = [
  "log",
 ]
@@ -64,6 +65,7 @@ version = "0.1.0"
 [[package]]
 name = "xdl-rs"
 version = "0.1.0"
+source = "git+https://github.com/horoni/xdl-rs#de3e1530b180c2e29540e0362fae4e0bfcbc7c05"
 dependencies = [
  "cc",
 ]

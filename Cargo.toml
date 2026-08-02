@@ -8,10 +8,10 @@ license = "BSD-2-Clause"
 crate-type = ["cdylib"]
 
 [dependencies]
-xdl-rs = { path = "xdl-rs" }
 imgui-rs = { path = "imgui-rs" }
 vulkan-rs = { path = "vulkan-rs" }
-and64inlinehook-rs = { path = "and64inlinehook-rs" }
+xdl-rs = { git = "https://github.com/horoni/xdl-rs" }
+and64inlinehook-rs = { git = "https://github.com/horoni/and64inlinehook-rs" }
 #jni-simple = "0.3"
 
 [dependencies.log]

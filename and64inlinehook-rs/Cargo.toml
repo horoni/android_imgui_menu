@@ -1,8 +1,0 @@
-[package]
-name = "and64inlinehook-rs"
-version = "0.1.0"
-edition = "2024"
-license = "BSD-2-Clause"
-
-[dependencies]
-log = "0.4"

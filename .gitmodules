@@ -1,6 +1,3 @@
-[submodule "xdl-rs/third_party/xdl"]
-	path = xdl-rs/third_party/xdl
-	url = https://github.com/hexhacking/xDL
 [submodule "third_party/cimgui"]
 	path = third_party/cimgui
 	url = https://github.com/cimgui/cimgui
