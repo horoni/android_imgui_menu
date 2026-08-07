@@ -1,0 +1,8 @@
+[package]
+name = "android-logger"
+version = "0.1.0"
+edition = "2024"
+license = "BSD-2-Clause"
+
+[dependencies]
+log.workspace = true

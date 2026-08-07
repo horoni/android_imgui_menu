@@ -2,13 +2,16 @@
 
 mod types;
 
-use crate::egl::types::*;
+use crate::types::*;
 use and64inlinehook_rs::a64_hook_function;
 use imgui_rs::ffi as imgui;
-use std::sync::OnceLock;
+use imgui_rs::PfnImGuiRender;
+use std::sync::{Arc, OnceLock};
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 use std::ptr;
+
+#[macro_use] extern crate log;
 
 static ORIG_SWAPBUFFERS: OnceLock<PfnEglSwapBuffers> = OnceLock::new();
 static EGL_QUERY_SURFACE: OnceLock<PfnEglQuerySurface> = OnceLock::new();
@@ -18,7 +21,10 @@ static GL_DISABLE: OnceLock<PfnGlDisable> = OnceLock::new();
 
 static IMGUI_INITED: AtomicBool = AtomicBool::new(false);
 
-pub fn init() {
+static IMGUI_RENDER: OnceLock<Arc<PfnImGuiRender>> = OnceLock::new();
+
+pub fn init(render_fn: Arc<PfnImGuiRender>) {
+	let _ = IMGUI_RENDER.set(render_fn);
 	let Some(lib_egl) = xdl_rs::Xdl::open_poll("libEGL.so", 0, 300) else {
 		warn!("[EGL]: libEGL.so not found after 3 sec");
 		return;
@@ -68,7 +74,7 @@ unsafe extern "C" fn egl_swapbuffers_hook(dpy: EGLDisplay, surf: EGLSurface) -> 
 	imgui::update_delta_time();
 	imgui::igNewFrame();
 
-	crate::menu::render_menu(false);
+	IMGUI_RENDER.get().unwrap()(false);
 
 	imgui::igRender();
 

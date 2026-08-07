@@ -1,0 +1,12 @@
+[package]
+name = "imgui-vk-hook"
+version = "0.1.0"
+edition = "2024"
+license = "BSD-2-Clause"
+
+[dependencies]
+and64inlinehook-rs.workspace = true
+xdl-rs.workspace = true
+log.workspace = true
+vulkan-rs = { path = "../vulkan-rs" }
+imgui-rs = { path = "../imgui-rs" }

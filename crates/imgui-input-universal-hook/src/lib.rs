@@ -7,6 +7,8 @@ use std::ptr;
 use and64inlinehook_rs::a64_hook_function;
 use imgui_rs::ffi as imgui;
 
+#[macro_use] extern crate log;
+
 type PfnInput1 = unsafe extern "C" fn(thiz: *mut c_void, ex_ab: *const c_void, ex_ac: *const c_void);
 type PfnInput2 = unsafe extern "C" fn(consumer: *mut c_void, factory: *mut c_void, is_raw: bool, sequence_id: c_long, out_policy_flags: *mut u32, out_event_ptr: *mut *const c_void) -> i32;
 
