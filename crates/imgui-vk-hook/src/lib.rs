@@ -4,9 +4,12 @@ mod utils;
 
 use std::ffi::{CStr, c_char, c_void};
 use std::ptr;
-use std::sync::{OnceLock, RwLock, RwLockWriteGuard, RwLockReadGuard};
+use std::sync::{Arc, OnceLock, RwLock, RwLockWriteGuard, RwLockReadGuard};
 use vulkan_rs::*;
 use imgui_rs::ffi as imgui;
+use imgui_rs::PfnImGuiRender;
+
+#[macro_use] extern crate log;
 
 #[derive(Debug)]
 pub struct VkState {
@@ -146,7 +149,10 @@ macro_rules! hook_vk_export {
 	};
 }
 
-pub fn init() {
+static IMGUI_RENDER: OnceLock<Arc<PfnImGuiRender>> = OnceLock::new();
+
+pub fn init(render_fn: Arc<PfnImGuiRender>) {
+	let _ = IMGUI_RENDER.set(render_fn);
 	let Some(lib_vulkan) = xdl_rs::Xdl::open_poll("libvulkan.so", 0, 300) else {
 		warn!("[Vulkan]: libvulkan.so not found after 3 sec");
 		return;
@@ -245,7 +251,7 @@ unsafe extern "C" fn vk_cs_khr_hook(device: VkDevice, p_create_info: *const VkSw
 		VK_API.rff.set(std::mem::transmute(gdpa(device, c"vkResetFences".as_ptr()))).ok();
 		VK_API.crp.set(std::mem::transmute(gdpa(device, c"vkCreateRenderPass".as_ptr()))).ok();
 		trace!("FN Pool inited: {:?}", VK_API);
-		
+
 		// Init command and descriptor pool.
 		if st.command_pool.is_null() {
 			// Allocate command pool.
@@ -488,7 +494,7 @@ unsafe fn render_frame(fb: VkFramebuffer, cmd_buf: VkCommandBuffer, fence: VkFen
 	imgui::update_delta_time();
 	imgui::igNewFrame();
 
-	crate::menu::render_menu(true);
+	IMGUI_RENDER.get().unwrap()(true);
 
 	imgui::igRender();
 	imgui::ImGui_ImplVulkan_RenderDrawData(imgui::igGetDrawData(), cmd_buf.as_ptr(), 0);

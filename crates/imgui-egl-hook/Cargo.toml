@@ -1,0 +1,11 @@
+[package]
+name = "imgui-egl-hook"
+version = "0.1.0"
+edition = "2024"
+license = "BSD-2-Clause"
+
+[dependencies]
+and64inlinehook-rs.workspace = true
+xdl-rs.workspace = true
+log.workspace = true
+imgui-rs = { path = "../imgui-rs" }

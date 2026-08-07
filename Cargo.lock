@@ -11,15 +11,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "android_imgui_menu"
+name = "android-logger"
 version = "0.1.0"
 dependencies = [
- "and64inlinehook-rs",
- "cc",
- "imgui-rs",
  "log",
- "vulkan-rs",
- "xdl-rs",
 ]
 
 [[package]]
@@ -29,14 +24,53 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5add81bb678e6cb321aff7fa0dc7689ad82b112dbc032cea19f91d6b8e3582b9"
 dependencies = [
  "find-msvc-tools",
+ "jobserver",
+ "libc",
  "shlex",
 ]
+
+[[package]]
+name = "cfg-if"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
 
 [[package]]
 name = "find-msvc-tools"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5baebc0774151f905a1a2cc41989300b1e6fbb29aff0ceffa1064fdd3088d582"
+
+[[package]]
+name = "getrandom"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "300e883d756b2e4ec94e02791f39b04b522276138852cfc41d9fb7e904106099"
+dependencies = [
+ "cfg-if",
+ "libc",
+ "r-efi",
+]
+
+[[package]]
+name = "imgui-egl-hook"
+version = "0.1.0"
+dependencies = [
+ "and64inlinehook-rs",
+ "imgui-rs",
+ "log",
+ "xdl-rs",
+]
+
+[[package]]
+name = "imgui-input-universal-hook"
+version = "0.1.0"
+dependencies = [
+ "and64inlinehook-rs",
+ "imgui-rs",
+ "log",
+ "xdl-rs",
+]
 
 [[package]]
 name = "imgui-rs"
@@ -47,10 +81,43 @@ dependencies = [
 ]
 
 [[package]]
+name = "imgui-vk-hook"
+version = "0.1.0"
+dependencies = [
+ "and64inlinehook-rs",
+ "imgui-rs",
+ "log",
+ "vulkan-rs",
+ "xdl-rs",
+]
+
+[[package]]
+name = "jobserver"
+version = "0.1.35"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1c00acbd29eabad4a2392fa0e921c874934dbbf4194312ad20f04a0ed67a3cb3"
+dependencies = [
+ "getrandom",
+ "libc",
+]
+
+[[package]]
+name = "libc"
+version = "0.2.189"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2"
+
+[[package]]
 name = "log"
 version = "0.4.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ceec5bc11778974d1bcb055b18002eba7f4b3518b6a0081b3af5f21666da9ad"
+
+[[package]]
+name = "r-efi"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf"
 
 [[package]]
 name = "shlex"
