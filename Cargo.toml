@@ -13,12 +13,4 @@ members = [
 xdl-rs = { git = "https://github.com/horoni/xdl-rs" }
 and64inlinehook-rs = { git = "https://github.com/horoni/and64inlinehook-rs" }
 cc = { version = "1.2", features = ["parallel"] }
-
-[workspace.dependencies.log]
-version = "0.4"
-features = [
-	#"max_level_trace",
-	"max_level_debug",
-	#"release_max_level_info",
-	#"release_max_level_off",
-]
+log = "0.4"
