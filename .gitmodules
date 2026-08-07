@@ -1,3 +1,4 @@
 [submodule "crates/imgui-rs/third_party/cimgui"]
 	path = crates/imgui-rs/third_party/cimgui
 	url = https://github.com/cimgui/cimgui
+	shallow = true
